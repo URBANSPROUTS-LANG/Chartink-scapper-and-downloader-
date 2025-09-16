@@ -259,7 +259,7 @@ def main():
             # Small delay between requests to be respectful to the server
             if i < len(links):
                 print("Waiting 2 seconds before next screener...")
-                time.sleep(2)  # Reduced from 5 seconds
+                time.sleep(0)  # Reduced from 5 seconds
         
         # Summary
         print(f"\n{'='*60}")
