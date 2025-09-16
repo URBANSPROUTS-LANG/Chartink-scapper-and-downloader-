@@ -1,4 +1,18 @@
-Got it ✅ — here’s the **README.md content** without wrapping it inside code blocks, so you can just copy-paste directly into your file:
+Chrome Debugging Setup with Selenium
+
+This project automates downloading CSV files from a premium account.
+
+What it does:
+
+Opens Chrome using a dedicated debug profile.
+
+Takes all the links from the target pages and saves them.
+
+Uses a premium account profile to access restricted content.
+
+Downloads CSV files automatically.
+
+This allows you to efficiently collect and download data without manually navigating pages.
 
 ---
 
@@ -71,5 +85,5 @@ Make sure you have the following installed:
 
 ---
 
-Do you want me to also add a **“Troubleshooting” section** (like common errors if ChromeDriver and Chrome versions don’t match)?
+
 
