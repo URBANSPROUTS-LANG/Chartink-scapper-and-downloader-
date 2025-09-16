@@ -69,12 +69,12 @@ def main(start, end, headless, use_wm, delay_min, delay_max):
         driver.quit()
 
     # Save as TXT
-    with open("chartink_screeners.txt", "w", encoding="utf-8") as f:
+    with open("chartink_links.txt", "w", encoding="utf-8") as f:
         for u in sorted(found):
             f.write(u + "\n")
 
     print(f"\nDone. Unique screener links: {len(found)}")
-    print("Saved to: chartink_screeners.txt")
+    print("Saved to: chartink_links.txt")
 
 if __name__ == "__main__":
     import argparse
