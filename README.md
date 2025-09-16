@@ -74,11 +74,14 @@ Make sure you have the following installed:
 
   ```
   pip install selenium
+  pip install bs4
+  pip instal requests
   ```
 * **ChromeDriver** (matching your installed Chrome version)
 
   * [Download ChromeDriver](https://chromedriver.chromium.org/downloads)
-
+pip install bs4
+pip instal requests
 ---
 
 ✨ You’re ready to go!
