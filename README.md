@@ -36,8 +36,13 @@ cd vectras-vm2
 ---
 
 ## ▶️ Run Script
+*  **chartink scrapper.py**
+* Run the script:
+   ```
+chartink scrapper
 
-* Download: **9years\_csv.py**
+  
+*  **9yearscsv.py**
 * Run the script:
 
   ```
