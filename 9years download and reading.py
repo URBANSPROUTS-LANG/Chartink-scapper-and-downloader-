@@ -13,9 +13,9 @@ import re
 # Configuration
 LINKS_FILE = r"C:\Users\lavanya\Downloads\chartink_links.txt"
 DOWNLOAD_DIR = r"C:\Users\lavanya\Downloads\Thrive_Data\toploved"
-DEFAULT_DOWNLOADS = r"C:\Users\lavanya\Downloads\Thrive_Data\toploved"  # Default Chrome downloads folder
-WAIT_TIME = 13  # Reduced from 30
-DOWNLOAD_TIMEOUT = 20  # Reduced from 60
+DEFAULT_DOWNLOADS = r"C:\Users\lavanya\Downloads"  # Default Chrome downloads folder
+WAIT_TIME = 0  # Reduced from 30
+DOWNLOAD_TIMEOUT = 0  # Reduced from 60
 
 # Chrome options
 chrome_options = Options()
