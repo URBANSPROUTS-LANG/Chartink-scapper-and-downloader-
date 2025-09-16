@@ -28,20 +28,20 @@ try:
 
     # wait for the backtest section to load
     wait.until(EC.presence_of_element_located((By.ID, "backtest-container")))
-    print("✅ Backtest section loaded")
+    print("Backtest section loaded")
 
     # open the dropdown scoped inside backtest-container
     backtest = driver.find_element(By.ID, "backtest-container")
     dropdown = backtest.find_element(By.CSS_SELECTOR, "div.custom-dropdown")
     driver.execute_script("arguments[0].click();", dropdown)
-    print("📂 Dropdown clicked")
+    print("Dropdown clicked")
     time.sleep(1)
 
     # pick the last option (e.g. '9 years')—feel free to target by text if you prefer
     ul = dropdown.find_element(By.CSS_SELECTOR, "ul.multiselectcustom__content")
     options = ul.find_elements(By.CSS_SELECTOR, "li[role='option'] span.multiselectcustom__option")
     driver.execute_script("arguments[0].click();", options[-1])
-    print(f"✅ Selected option: {options[-1].text.strip()}")
+    print(f"Selected option: {options[-1].text.strip()}")
     time.sleep(2)
 
     # click “Download csv” and exit
@@ -50,9 +50,9 @@ try:
     driver.execute_script("arguments[0].scrollIntoView(true);", csv_btn)
     time.sleep(1)
     csv_btn.click()
-    print("📥 Download initiated. Waiting a few seconds…")
+    print("Download initiated. Waiting a few seconds…")
     time.sleep(5)
 
 finally:
     driver.quit()
-    print("🚪 Browser closed")
+    print("Browser closed")
