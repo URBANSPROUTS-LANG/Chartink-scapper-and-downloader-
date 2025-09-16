@@ -83,7 +83,11 @@ Make sure you have the following installed:
 
 ✨ You’re ready to go!
 
+
 ---
+Dont to forget
+ * to downlaod all scripts and installation requirements
+ * change all file paths to work for your computer
 
 
 
