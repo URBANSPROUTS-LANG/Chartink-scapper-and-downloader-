@@ -1,0 +1,207 @@
+import os
+import time
+import glob
+import csv
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.chrome.options import Options
+from urllib.parse import urlparse
+import re
+
+# Configuration
+LINKS_FILE = r"C:\Users\Muthulk\Downloads\Q.txt"   # Your screener links file
+DOWNLOAD_DIR = r"C:\Users\Muthulk\Downloads\Thrive_Data\toploved"
+DEFAULT_DOWNLOADS = r"C:\Users\Muthulk\Downloads"
+LOG_FILE = os.path.join(DOWNLOAD_DIR, "download_log.csv")
+WAIT_TIME = 10             # wait for elements to load
+DOWNLOAD_TIMEOUT = 60      # wait max 60s for download to finish
+
+# Chrome options
+chrome_options = Options()
+chrome_options.debugger_address = "127.0.0.1:9233"   # assumes Chrome started with --remote-debugging-port=9233
+prefs = {
+    "download.default_directory": DOWNLOAD_DIR,
+    "download.prompt_for_download": False,
+    "download.directory_upgrade": True,
+    "safebrowsing.enabled": True
+}
+chrome_options.add_experimental_option("prefs", prefs)
+
+
+# ------------------- helper functions -------------------
+
+def read_links_from_file(filename):
+    """Read links from text file, one per line"""
+    links = []
+    try:
+        with open(filename, 'r', encoding='utf-8') as file:
+            for line_num, line in enumerate(file, 1):
+                line = line.strip()
+                if line and not line.startswith('#'):
+                    if line.startswith('http'):
+                        links.append(line)
+                    else:
+                        print(f"⚠️ Line {line_num}: Invalid URL format - {line}")
+        return links
+    except FileNotFoundError:
+        print(f"File '{filename}' not found!")
+        return []
+    except Exception as e:
+        print(f"Error reading file: {e}")
+        return []
+
+
+def wait_for_download(primary_dir, fallback_dir, timeout=DOWNLOAD_TIMEOUT):
+    """Wait for CSV file to be downloaded in either directory"""
+    end_time = time.time() + timeout
+
+    def get_csv_files(directory):
+        try:
+            return glob.glob(os.path.join(directory, "*.csv"))
+        except:
+            return []
+
+    initial_primary = get_csv_files(primary_dir)
+    initial_fallback = get_csv_files(fallback_dir)
+
+    while time.time() < end_time:
+        # Primary dir
+        current_primary = get_csv_files(primary_dir)
+        if len(current_primary) > len(initial_primary):
+            return max(current_primary, key=os.path.getctime)
+
+        # Fallback dir
+        current_fallback = get_csv_files(fallback_dir)
+        if len(current_fallback) > len(initial_fallback):
+            latest_file = max(current_fallback, key=os.path.getctime)
+            try:
+                new_path = os.path.join(primary_dir, os.path.basename(latest_file))
+                os.rename(latest_file, new_path)
+                return new_path
+            except:
+                return latest_file
+
+        time.sleep(1)
+    return None
+
+
+def sanitize_filename(url):
+    """Create a safe filename from URL"""
+    path = urlparse(url).path
+    screener_name = path.split('/')[-1] if path.split('/')[-1] else 'screener'
+    return re.sub(r'[^\w\-_]', '_', screener_name)
+
+
+# ------------------- main process -------------------
+
+def process_screener(driver, wait, url, screener_num, total_screeners):
+    print(f"\n{'='*60}\nProcessing screener {screener_num}/{total_screeners}\n URL: {url}")
+    try:
+        driver.get(url)
+        wait.until(EC.presence_of_element_located((By.ID, "backtest-container")))
+        print("Backtest section loaded")
+
+        # Open dropdown
+        backtest = driver.find_element(By.ID, "backtest-container")
+        dropdown_container = backtest.find_element(By.CSS_SELECTOR, "div.custom-dropdown")
+        driver.execute_script("arguments[0].click();", dropdown_container)
+        time.sleep(2)
+
+        # Collect options
+        ul = dropdown_container.find_element(By.CSS_SELECTOR, "ul.multiselectcustom__content")
+        options = ul.find_elements(By.CSS_SELECTOR, "li[role='option'] span.multiselectcustom__option")
+
+        # Pick 9 years if available
+        target_option = None
+        for opt in options:
+            text = opt.text.strip().lower()
+            if "9" in text and "year" in text:
+                target_option = opt
+                break
+
+        if not target_option and options:
+            target_option = options[-1]  # fallback
+
+        if target_option:
+            driver.execute_script("arguments[0].click();", target_option)
+            print(f"Selected timeframe: '{target_option.text.strip()}'")
+            # Wait for table refresh
+            try:
+                wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "#backtest-container table")))
+                print("✅ Backtest table refreshed")
+            except:
+                print("⚠️ Table did not refresh in time")
+            time.sleep(2)
+        else:
+            print("❌ No timeframe option found")
+            return False
+
+        # Click Download CSV
+        csv_button = wait.until(
+            EC.element_to_be_clickable((By.XPATH, "//div[contains(text(), 'Download csv')]"))
+        )
+        driver.execute_script("arguments[0].click();", csv_button)
+        print("Clicked Download CSV")
+
+        # Wait for file
+        downloaded_file = wait_for_download(DOWNLOAD_DIR, DEFAULT_DOWNLOADS)
+        if downloaded_file:
+            screener_name = sanitize_filename(url)
+            new_filename = f"{screener_name}_9years_{int(time.time())}.csv"
+            new_filepath = os.path.join(DOWNLOAD_DIR, new_filename)
+            try:
+                os.rename(downloaded_file, new_filepath)
+            except:
+                new_filepath = downloaded_file
+                new_filename = os.path.basename(downloaded_file)
+
+            print(f"CSV saved as: {new_filename}")
+
+            # Log entry
+            with open(LOG_FILE, "a", newline="", encoding="utf-8") as log:
+                writer = csv.writer(log)
+                if log.tell() == 0:
+                    writer.writerow(["Filename", "URL"])
+                writer.writerow([new_filename, url])
+
+            return True
+        else:
+            print("❌ Download failed or timed out")
+            return False
+
+    except Exception as e:
+        print(f"❌ Error processing screener: {e}")
+        return False
+
+
+def main():
+    os.makedirs(DOWNLOAD_DIR, exist_ok=True)
+
+    links = read_links_from_file(LINKS_FILE)
+    if not links:
+        print("No valid links found. Exiting.")
+        return
+
+    print(f"Found {len(links)} links to process")
+
+    driver = webdriver.Chrome(service=Service(), options=chrome_options)
+    wait = WebDriverWait(driver, WAIT_TIME)
+
+    success, failed = 0, 0
+    try:
+        for i, url in enumerate(links, 1):
+            if process_screener(driver, wait, url, i, len(links)):
+                success += 1
+            else:
+                failed += 1
+        print(f"\nSUMMARY: {success} success, {failed} failed")
+        print(f"Log file created at: {LOG_FILE}")
+    finally:
+        driver.quit()
+
+
+if __name__ == "__main__":
+    main()
