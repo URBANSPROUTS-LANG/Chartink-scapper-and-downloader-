@@ -11,21 +11,21 @@ df = pd.read_csv(
     engine="python"  # more tolerant parser
 )
 
-# Remove possible duplicate header row (since we forced names)
+# Remove possible duplicate header row
 df = df[df["url"] != "url"]
 
-# Group by filename and collect all URLs
-duplicates = df.groupby("filename")["url"].apply(list).reset_index()
+# Add a duplicate count per filename (1-based)
+df['dup_count'] = df.groupby('filename').cumcount() + 1
 
-# Keep only filenames that appear more than once
-duplicates = duplicates[duplicates["url"].str.len() > 1]
+# Keep all duplicates except the first
+all_but_first_duplicates = df[df['dup_count'] > 1]
 
 # Show results
-print("Filenames with exact matches and their URLs:")
-print(duplicates)
+print("Second, third, fourth, ... occurrences of duplicates:")
+print(all_but_first_duplicates)
 
 # Save results
-output_path = r"C:\Users\Muthulk\Downloads\matching_filenames.csv"
-duplicates.to_csv(output_path, index=False)
+output_path = r"C:\Users\Muthulk\Downloads\duplicates_except_first.csv"
+all_but_first_duplicates.to_csv(output_path, index=False)
 
 print(f"\nResults saved to: {output_path}")
