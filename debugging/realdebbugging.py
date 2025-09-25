@@ -1,31 +1,24 @@
 import pandas as pd
 
-file_path = r"C:\Users\Muthulk\Downloads\chartink_downloads - Copy.csv"
+# Load the CSV file
+df = pd.read_csv("your_file.csv")
 
-# Read CSV while skipping problematic lines and forcing 3 columns
-df = pd.read_csv(
-    file_path,
-    names=["url", "filename", "suffix"],  # force 3 columns
-    header=None,  # ignore the first row as header
-    on_bad_lines="skip",  # skip rows with too many/few columns
-    engine="python"  # more tolerant parser
-)
+# Assume column 2 has filenames and column 1 (index 0) has URLs
+filename_col = df.iloc[:, 1]  # column with filenames
+url_col = df.iloc[:, 0]       # column with URLs
 
-# Remove possible duplicate header row
-df = df[df["url"] != "url"]
+# Find filenames that repeat
+repeating_filenames = filename_col[filename_col.duplicated(keep=False)]
 
-# Add a duplicate count per filename (1-based)
-df['dup_count'] = df.groupby('filename').cumcount() + 1
+# Filter rows where filename repeats
+rows_with_repeats = df[filename_col.isin(repeating_filenames)]
 
-# Keep all duplicates except the first
-all_but_first_duplicates = df[df['dup_count'] > 1]
+# Get only the URLs from those rows
+urls = rows_with_repeats.iloc[:, 0].drop_duplicates()
 
-# Show results
-print("Second, third, fourth, ... occurrences of duplicates:")
-print(all_but_first_duplicates)
+# Print URLs
+for url in urls:
+    print(url)
 
-# Save results
-output_path = r"C:\Users\Muthulk\Downloads\duplicates_except_first.csv"
-all_but_first_duplicates.to_csv(output_path, index=False)
-
-print(f"\nResults saved to: {output_path}")
+# Save URLs to CSV
+urls.to_csv("urls_with_repeating_filenames.csv", index=False, header=False)
