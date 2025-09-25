@@ -2,30 +2,30 @@ import pandas as pd
 
 file_path = r"C:\Users\Muthulk\Downloads\chartink_downloads - Copy.csv"
 
-# Read CSV safely (force 3 columns, skip bad rows)
+# Read CSV while skipping problematic lines and forcing 3 columns
 df = pd.read_csv(
     file_path,
-    names=["url", "filename", "suffix"],
-    header=None,
-    on_bad_lines="skip",
-    engine="python"
+    names=["url", "filename", "suffix"],  # force 3 columns
+    header=None,  # ignore the first row as header
+    on_bad_lines="skip",  # skip rows with too many/few columns
+    engine="python"  # more tolerant parser
 )
 
 # Remove possible duplicate header row
 df = df[df["url"] != "url"]
 
-# Find duplicate filenames
-duplicate_filenames = df[df.duplicated("filename", keep=False)]
+# Add a duplicate count per filename (1-based)
+df['dup_count'] = df.groupby('filename').cumcount() + 1
 
-# Keep only the URLs
-duplicate_urls = duplicate_filenames[["url"]]
+# Keep all duplicates except the first
+all_but_first_duplicates = df[df['dup_count'] > 1]
 
 # Show results
-print("URLs with duplicate filenames:")
-print(duplicate_urls)
+print("Second, third, fourth, ... occurrences of duplicates:")
+print(all_but_first_duplicates)
 
-# Save to CSV
-output_path = r"C:\Users\Muthulk\Downloads\duplicate_urls.csv"
-duplicate_urls.to_csv(output_path, index=False)
+# Save results
+output_path = r"C:\Users\Muthulk\Downloads\duplicates_except_first.csv"
+all_but_first_duplicates.to_csv(output_path, index=False)
 
 print(f"\nResults saved to: {output_path}")
